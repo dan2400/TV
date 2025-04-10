@@ -51,7 +51,7 @@ def cartesian_to_polar(img, center=None, sampling_frequency=360, radial_scale=1.
             cv2.imshow("View Image", view_img)
             cv2.imshow("Polar Image", polar_img)
             cv2.waitKey(1)
-            cv2.destroyAllWindows()
+    cv2.destroyAllWindows()
 
     return polar_img
 
