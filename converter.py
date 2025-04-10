@@ -10,7 +10,7 @@ import os
 # --- Настройки ---
 SERIAL_PORT = 'COM5'
 BAUD_RATE = 115200
-SAMPLING_FREQUENCY = 177
+SAMPLING_FREQUENCY = 64
 RADIAL_SCALE = 1.0
 CENTER_X = 0
 CENTER_Y = 0
@@ -24,28 +24,34 @@ def cartesian_to_polar(img, center=None, sampling_frequency=360, radial_scale=1.
     if center is None:
         center = (width // 2, height // 2)
 
-    max_radius = int(np.sqrt((center[0])**2 + (center[1])**2))
-    max_radius = max(max_radius, int(np.sqrt((width - center[0])**2 + (center[1])**2)))
-    max_radius = max(max_radius, int(np.sqrt((center[0])**2 + (height - center[1])**2)))
-    max_radius = max(max_radius, int(np.sqrt((width - center[0])**2 + (height - center[1])**2)))
-    max_radius = int(max_radius * radial_scale)
+    max_radius = center[0]
 
-    polar_img = np.zeros((max_radius, sampling_frequency, img.shape[2]), dtype=img.dtype) if len(img.shape) == 3 else np.zeros((max_radius, sampling_frequency), dtype=img.dtype)
+    polar_img = np.zeros((max_radius * 2, sampling_frequency, img.shape[2]), dtype=img.dtype) if len(img.shape) == 3 else np.zeros((max_radius * 2, sampling_frequency), dtype=img.dtype)
+    view_img = np.zeros((center[1] * 2, center[0] * 2, img.shape[2]), dtype=img.dtype)
 
     for angle in range(sampling_frequency):
         for i in range(2):
-            theta = np.pi * angle / sampling_frequency + np.pi * i
+            theta = np.pi * angle / sampling_frequency
 
             for radius in range(max_radius):
                 r = radius / radial_scale
 
-                x = int(center[0] + r * np.cos(theta))
-                y = int(center[1] + r * np.sin(theta))
+                x = int(center[0] + r * np.cos(theta + np.pi * i))
+                y = int(center[1] + r * np.sin(theta + np.pi * i))
 
                 if 0 <= x < width and 0 <= y < height:
-                    polar_img[radius, angle] = img[y, x]
+                    if i == 0:
+                        k = 1
+                    else:
+                        k = -1
+                    polar_img[(k * radius) + max_radius, angle] = img[y, x]
+                    view_img[y, x] = img[y, x]
                 else:
                     polar_img[radius, angle] = [0, 0, 0]
+            cv2.imshow("View Image", view_img)
+            cv2.imshow("Polar Image", polar_img)
+            cv2.waitKey(1)
+            cv2.destroyAllWindows()
 
     return polar_img
 
